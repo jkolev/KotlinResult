@@ -26,6 +26,9 @@ This library provides:
 ```kotlin
 dependencies {
     implementation("jkolev.result:kotlin-result:1.0.0")
+
+    // Required for coroutine support (catchSuspend, catchingSuspend)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 ```
 
@@ -185,18 +188,42 @@ fun processOrder(orderId: String): Result<Receipt, OrderError> =
         .map { generateReceipt(it) }
 ```
 
-## Coroutine Safety
+## Coroutine Support
 
-Unlike Kotlin's `runCatching`, our `Result.catch` properly handles coroutine cancellation:
+Full first-class support for Kotlin coroutines with dedicated suspend-aware functions:
+
+### `catchSuspend` - For Suspend Functions
 
 ```kotlin
-// Safe for use in coroutines
-suspend fun fetchData(): Result<Data, Exception> = Result.catch {
-    // If the coroutine is cancelled, CancellationException is re-thrown
-    // It's NOT captured as a Result.Failure
-    api.fetch()
+suspend fun fetchUser(id: Int): Result<User, Exception> = Result.catchSuspend {
+    delay(100)
+    api.getUser(id)  // CancellationException is properly re-thrown
 }
 ```
+
+### `catchingSuspend` - With Custom Error Types
+
+```kotlin
+sealed interface ApiError {
+    data class NetworkError(val message: String?) : ApiError
+}
+
+suspend fun fetchUser(id: Int): Result<User, ApiError> =
+    Result.catchingSuspend({ ApiError.NetworkError(it.message) }) {
+        api.getUser(id)
+    }
+```
+
+### Why It Matters
+
+Unlike Kotlin's `runCatching`, these functions **never capture `CancellationException`**:
+
+- ✅ Structured concurrency is preserved
+- ✅ `withTimeout` works correctly
+- ✅ Parent job cancellation propagates properly
+- ✅ Resource cleanup happens as expected
+
+**See [COROUTINES.md](COROUTINES.md) for the complete coroutine guide with examples and patterns.**
 
 ## Testing
 
