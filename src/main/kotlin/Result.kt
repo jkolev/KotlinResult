@@ -96,6 +96,70 @@ sealed class Result<out V, out E> {
                 if (e is CancellationException) throw e
                 failure(e)
             }
+
+        /**
+         * Suspend-aware version of catch. Wraps a suspend block and captures exceptions
+         * while preserving structured concurrency by re-throwing CancellationException.
+         *
+         * Example:
+         * ```
+         * suspend fun fetchUser(id: Int): Result<User, Exception> = Result.catchSuspend {
+         *     delay(100)
+         *     api.getUser(id)
+         * }
+         * ```
+         */
+        suspend inline fun <V> catchSuspend(
+            crossinline block: suspend () -> V
+        ): Result<V, Exception> = try {
+            success(block())
+        } catch (e: Exception) {
+            // Never swallow coroutine cancellation
+            if (e is CancellationException) throw e
+            failure(e)
+        }
+
+        /**
+         * Wraps a throwing block with a custom error type mapper.
+         * Re-throws CancellationException to stay coroutine-safe.
+         *
+         * Example:
+         * ```
+         * Result.catching({ DomainError.NetworkError(it.message) }) {
+         *     api.fetch()
+         * }
+         * ```
+         */
+        inline fun <V, E> catching(
+            mapError: (Exception) -> E,
+            block: () -> V
+        ): Result<V, E> = try {
+            success(block())
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            failure(mapError(e))
+        }
+
+        /**
+         * Suspend-aware version of catching with custom error mapper.
+         *
+         * Example:
+         * ```
+         * suspend fun fetchUser(id: Int): Result<User, DomainError> =
+         *     Result.catchingSuspend({ DomainError.NetworkError(it.message) }) {
+         *         api.getUser(id)
+         *     }
+         * ```
+         */
+        suspend inline fun <V, E> catchingSuspend(
+            crossinline mapError: (Exception) -> E,
+            crossinline block: suspend () -> V
+        ): Result<V, E> = try {
+            success(block())
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            failure(mapError(e))
+        }
     }
 }
 
@@ -131,4 +195,4 @@ fun <V, E> List<Result<V, E>>.sequence(): Result<List<V>, E> {
 fun <T, V, E> List<T>.traverseResult(transform: (T) -> Result<V, E>): Result<List<V>, E> =
     map(transform).sequence()
 
-//endregion
+// endregion
