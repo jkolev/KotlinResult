@@ -6,16 +6,16 @@ This library is **fully coroutine-safe** and provides specialized functions for 
 
 The most important rule when using Result with coroutines:
 
-**❌ WRONG - Breaks structured concurrency:**
+**WRONG - Breaks structured concurrency:**
 ```kotlin
 suspend fun fetchData(): Result<Data, Exception> = try {
     api.fetch().asSuccess()
 } catch (e: Exception) {
-    e.asFailure()  // ❌ Captures CancellationException!
+    e.asFailure()  // Captures CancellationException!
 }
 ```
 
-**✅ CORRECT - Use built-in helpers:**
+**CORRECT - Use built-in helpers:**
 ```kotlin
 suspend fun fetchData(): Result<Data, Exception> = Result.catchSuspend {
     api.fetch()
@@ -41,10 +41,10 @@ suspend fun fetchUser(id: Int): Result<User, Exception> = Result.catchSuspend {
 ```
 
 **What it does:**
-- ✅ Returns `Result.Success` on success
-- ✅ Returns `Result.Failure` for exceptions
-- ✅ Re-throws `CancellationException` (preserves structured concurrency)
-- ✅ Re-throws `Error` types (OutOfMemoryError, etc.)
+- Returns `Result.Success` on success
+- Returns `Result.Failure` for exceptions
+- Re-throws `CancellationException` (preserves structured concurrency)
+- Re-throws `Error` types (OutOfMemoryError, etc.)
 
 ### `catchingSuspend` - For Custom Error Types
 
@@ -191,17 +191,17 @@ fun `test async operation`() = runTest {
 
 ## Migration from `runCatching`
 
-### Before (stdlib - ❌ Unsafe with coroutines):
+### Before (stdlib - Unsafe with coroutines):
 ```kotlin
 suspend fun fetchData(): Result<Data> = runCatching {
-    api.fetch()  // ❌ Can capture CancellationException!
+    api.fetch()  // Can capture CancellationException!
 }
 ```
 
-### After (this library - ✅ Safe):
+### After (this library - Safe):
 ```kotlin
 suspend fun fetchData(): Result<Data, Exception> = Result.catchSuspend {
-    api.fetch()  // ✅ CancellationException is properly propagated
+    api.fetch()  // CancellationException is properly propagated
 }
 ```
 
@@ -209,10 +209,10 @@ suspend fun fetchData(): Result<Data, Exception> = Result.catchSuspend {
 
 When using Kotlin coroutines, `CancellationException` is used for **structured concurrency**. If you accidentally catch it:
 
-- ❌ Coroutine cancellation doesn't propagate
-- ❌ `withTimeout` won't work correctly
-- ❌ Parent job cancellation won't stop children
-- ❌ Resource cleanup may not happen
+- Coroutine cancellation doesn't propagate
+- `withTimeout` won't work correctly
+- Parent job cancellation won't stop children
+- Resource cleanup may not happen
 
 This library **guarantees** that `CancellationException` is always re-thrown, making it safe to use in any coroutine context.
 

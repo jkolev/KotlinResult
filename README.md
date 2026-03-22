@@ -6,18 +6,18 @@ A lightweight, dual-typed `Result<V, E>` implementation for Kotlin that fixes th
 
 Kotlin's standard library `Result<T>` has several limitations:
 
-- ❌ Error type is hardcoded to `Throwable`
-- ❌ Limited monadic API (no `mapError`, `flatMapError`)
-- ❌ `runCatching` swallows `CancellationException` (breaks structured concurrency)
-- ❌ Not truly exhaustive (can use `getOrThrow()` without handling failures)
+- Error type is hardcoded to `Throwable`
+- Limited monadic API (no `mapError`, `flatMapError`)
+- `runCatching` swallows `CancellationException` (breaks structured concurrency)
+- Not truly exhaustive (can use `getOrThrow()` without handling failures)
 
 This library provides:
 
-- ✅ Generic error type `E` - use sealed classes, enums, or any type
-- ✅ Full monadic API: `map`, `mapError`, `flatMap`, `flatMapError`
-- ✅ Coroutine-safe: explicit `CancellationException` re-throwing
-- ✅ Exhaustive: sealed class forces handling both branches
-- ✅ Railway-oriented programming support
+- Generic error type `E` - use sealed classes, enums, or any type
+- Full monadic API: `map`, `mapError`, `flatMap`, `flatMapError`
+- Coroutine-safe: explicit `CancellationException` re-throwing
+- Exhaustive: sealed class forces handling both branches
+- Railway-oriented programming support
 
 ## Installation
 
@@ -218,10 +218,10 @@ suspend fun fetchUser(id: Int): Result<User, ApiError> =
 
 Unlike Kotlin's `runCatching`, these functions **never capture `CancellationException`**:
 
-- ✅ Structured concurrency is preserved
-- ✅ `withTimeout` works correctly
-- ✅ Parent job cancellation propagates properly
-- ✅ Resource cleanup happens as expected
+- Structured concurrency is preserved
+- `withTimeout` works correctly
+- Parent job cancellation propagates properly
+- Resource cleanup happens as expected
 
 **See [COROUTINES.md](COROUTINES.md) for the complete coroutine guide with examples and patterns.**
 
